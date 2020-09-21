@@ -1,37 +1,62 @@
 package lift;
 
+import java.util.concurrent.Semaphore;
+
 public class Lift {
-    private LiftView liftView;
-    private boolean doorOpen;
+    private int currentFloor;
 
-    public Lift(LiftView liftView) {
-        this.liftView = liftView;
-        this.doorOpen = true;
+    private int fromFloor;
+    private int toFloor;
+
+    private boolean moving;
+    private int direction;
+    private int[] waitEntry;
+    private int[] waitExit;
+    private int load;
+
+    private Semaphore passengerSemaphore;
+
+
+    public Lift(Semaphore passengerSemaphore) {
+        this.moving = false;
+        this.currentFloor = 0;
+        this.waitEntry = new int[6];
+        this.waitExit = new int[6];
+        this.direction = 1;
+        this.load = 0;
+        this.passengerSemaphore = passengerSemaphore;
     }
 
-    public synchronized void moveLift(int from, int to) {
-        while (doorOpen) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        liftView.moveLift(from, to);
-        doorOpen = false;
-        notifyAll();
+    public void makeRide(Passenger passenger) {
+        fromFloor = passenger.getStartFloor();
+        toFloor = passenger.getDestinationFloor();
     }
 
-    public synchronized void openDoors(int from) {
-        while (doorOpen) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        liftView.openDoors(from);
-        doorOpen = false;
-        notifyAll();
+    public synchronized void setCurrentFloor(int currentFloor) {
+        this.currentFloor = currentFloor;
+    }
+
+    public void setMoving(boolean moving) {
+        this.moving = moving;
+    }
+
+    public void setDirection(int direction) {
+        this.direction = direction;
+    }
+
+    public void setLoad(int load) {
+        this.load = load;
+    }
+
+    public int getCurrentFloor() {
+        return currentFloor;
+    }
+
+    public int getFromFloor() {
+        return fromFloor;
+    }
+
+    public int getToFloor() {
+        return toFloor;
     }
 }
