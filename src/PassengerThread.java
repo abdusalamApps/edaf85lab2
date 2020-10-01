@@ -3,7 +3,6 @@ import lift.LiftView;
 import lift.Passenger;
 
 import java.util.Random;
-import java.util.concurrent.Semaphore;
 
 public class PassengerThread extends Thread {
 
@@ -24,12 +23,10 @@ public class PassengerThread extends Thread {
             sleep(random.nextInt(46) * 1000);
             Passenger passenger = view.createPassenger();
             passenger.begin();
-            if (lift.canEnterLift(passenger)) {
-                passenger.enterLift();
-            }
-            if (lift.canExitLift(passenger)) {
-                passenger.exitLift();
-            }
+            lift.enter(passenger);
+
+            lift.exit(passenger);
+
             passenger.end();
         } catch (InterruptedException e) {
             e.printStackTrace();

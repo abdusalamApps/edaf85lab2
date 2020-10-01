@@ -11,24 +11,22 @@ public class Lift {
 
     private boolean moving;
     private int direction;
-    private Map<Integer, Integer> waitEntry;
-    private Map<Integer, Integer> waitExit;
+    private int[] waitEntry;
+    private int[] waitExit;
     private int load;
-
-    private Semaphore passengerSemaphore;
-
 
     public Lift(Semaphore passengerSemaphore) {
         this.moving = false;
         this.currentFloor = 0;
-        this.waitEntry = new HashMap<>();
-        this.waitExit = new HashMap<>();
+        this.waitEntry = new int[7];
+        this.waitExit = new int[7];
         this.direction = 1;
         this.load = 0;
-        this.passengerSemaphore = passengerSemaphore;
     }
 
-    public synchronized boolean canEnterLift(Passenger passenger) {
+    public synchronized void enter(Passenger passenger) {
+        waitEntry[passenger.getStartFloor()]++;
+        notifyAll();
         while (currentFloor != passenger.getStartFloor() || moving || load > 3) {
             try {
                 wait();
@@ -37,10 +35,13 @@ public class Lift {
             }
         }
         load++;
-        return true;
+        passenger.enterLift();
+        waitEntry[passenger.getStartFloor()]--;
+        waitExit[passenger.getDestinationFloor()]++;
+        notifyAll();
     }
 
-    public synchronized boolean canExitLift(Passenger passenger) {
+    public synchronized void exit(Passenger passenger) {
         while (currentFloor != passenger.getDestinationFloor() || moving) {
             try {
                 wait();
@@ -49,14 +50,19 @@ public class Lift {
             }
         }
         load--;
-        return true;
+        passenger.exitLift();
+        waitExit[passenger.getDestinationFloor()]--;
+        notifyAll();
     }
 
+
+/*
     public synchronized boolean openDoors() {
-        int wen = waitEntry.get(currentFloor);
+        int wen = waitEntry;
         int wet = waitExit.get(currentFloor);
         return wen > 0 || wet > 0;
     }
+*/
 
 /*
     public void addWaitEntry(int floor) {
@@ -85,6 +91,17 @@ public class Lift {
         currentFloor = nextFloor;
         notifyAll();
         return nextFloor;
+    }
+
+    public synchronized void waitForPassengers() {
+        while ((waitEntry[currentFloor] > 0 && load < 4) || waitExit[currentFloor] > 0) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     public synchronized void setCurrentFloor(int currentFloor) {
