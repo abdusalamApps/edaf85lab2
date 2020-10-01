@@ -7,15 +7,13 @@ import java.util.concurrent.Semaphore;
 
 public class PassengerThread extends Thread {
 
-    private LiftView liftView;
+    private LiftView view;
     private Lift lift;
     private Random random;
-    private Semaphore passengerSemaphore;
 
-    public PassengerThread(LiftView liftView, Lift lift, Semaphore passengerSemaphore) {
-        this.liftView = liftView;
+    public PassengerThread(LiftView view, Lift lift) {
+        this.view = view;
         this.lift = lift;
-        this.passengerSemaphore = passengerSemaphore;
         random = new Random();
     }
 
@@ -23,20 +21,16 @@ public class PassengerThread extends Thread {
     public void run() {
         super.run();
         try {
-//            sleep(random.nextInt(46) * 1000);
-            Passenger passenger = liftView.createPassenger();
-            lift.makeRide(passenger);
-            passengerSemaphore.release();
-
+            sleep(random.nextInt(46) * 1000);
+            Passenger passenger = view.createPassenger();
             passenger.begin();
-
-            passengerSemaphore.acquire();
-            passenger.enterLift();
-            passengerSemaphore.release();
-
-            passengerSemaphore.acquire();
-            passenger.exitLift();
-            passengerSemaphore.release();
+            if (lift.canEnterLift(passenger)) {
+                passenger.enterLift();
+            }
+            if (lift.canExitLift(passenger)) {
+                passenger.exitLift();
+            }
+            passenger.end();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
